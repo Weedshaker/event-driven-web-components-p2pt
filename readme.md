@@ -1,4 +1,4 @@
-# Event Driven Web Components Router
+# Event Driven Web Components P2pt
 
 > [p2pt](https://github.com/subins2000/p2pt) for an event driven architecture.
 
