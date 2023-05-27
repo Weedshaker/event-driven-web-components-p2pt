@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  <title>P2PT Example</title>
+</head>
+<body>
+  <c-p2pt identifier-string="weedshakers-event-driven-web-components-p2pt-example">
+    <h1>Simple P2PT capability example</h1>
+    <h2>Received</h2>
+    <m-messages></m-messages>
+    <h2>Sent</h2>
+    <m-messages></m-messages>
+    <h2>Send</h2>
+    <a-send></a-send>
+  </c-p2pt>
+  <script rel=preload type=module>
+    /**
+     * First level controllers and organisms are loaded and defined here then they may loadChildComponents
+     */
+    Promise.all([
+      import('/src/P2pt.js').then(module => ['c-p2pt', module.P2pt()])
+    ]).then(elements => elements.forEach(element => {
+      // don't define already existing customElements
+      if (element && !customElements.get(element[0])) customElements.define(...element)
+    }))
+  </script>
+</body>
+</html>
