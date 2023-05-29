@@ -19,7 +19,7 @@
      * First level controllers and organisms are loaded and defined here then they may loadChildComponents
      */
     Promise.all([
-      import('/src/EventDrivenP2pt.js').then(module => ['c-event-driven-p2pt', module.EventDrivenP2pt()])
+      import('./src/EventDrivenP2pt.js').then(module => ['c-event-driven-p2pt', module.EventDrivenP2pt()])
     ]).then(elements => elements.forEach(element => {
       // don't define already existing customElements
       if (element && !customElements.get(element[0])) customElements.define(...element)
