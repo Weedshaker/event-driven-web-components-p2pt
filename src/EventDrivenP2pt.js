@@ -244,13 +244,34 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * @param {any} msg
    * @param {*} [peer=this.peers]
    * @param {string} [msgID='']
+   * @param {boolean} [dispatchEvent=true]
    * @return {Promise<any>}
    */
-  async send (msg, peer = this.peers, msgID = '') {
+  async send (msg, peer = this.peers, msgID = '', dispatchEvent = true) {
     console.log('send', msg, peer)
     peer = await Promise.resolve(peer)
-    if (Array.isArray(peer)) return peer.map(peer => this.send(msg, peer, msgID))
-    return (await this.p2pt).send(peer, typeof msg === 'string' ? msg : msg.toLocaleString(), msgID)
+    if (Array.isArray(peer)) {
+      const result = peer.map(peer => this.send(msg, peer, msgID, false))
+      if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}send`, {
+        detail: {
+          result
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+      return result
+    }
+    const result = (await this.p2pt).send(peer, typeof msg === 'string' ? msg : msg.toLocaleString(), msgID)
+    if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}send`, {
+      detail: {
+        result
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+    return result
   }
 
   /**
@@ -262,7 +283,17 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   setIdentifier (identifierString) {
     this.identifierString = identifierString
     this.setAttribute('identifier-string', identifierString)
-    this.p2pt.then(p2pt => p2pt.setIdentifier(identifierString))
+    this.p2pt.then(p2pt => {
+      p2pt.setIdentifier(identifierString)
+      this.dispatchEvent(new CustomEvent(`${this.namespace}set-identifier`, {
+        detail: {
+          identifierString
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    })
   }
 
   /**

@@ -10,6 +10,11 @@
 - npm run serve
 
 
+## TODO
+- [] types and event interfaces
+- [] example demo
+
+
 ### Articles
 
 - [Build an Event Driven TodoMVC App with 8 lightweight VanillaJS Web Components](https://dev.to/weedshaker/build-an-event-driven-todomvc-app-with-8-lightweight-vanillajs-web-components-5b65)
