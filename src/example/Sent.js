@@ -5,6 +5,11 @@ export default class Sent extends HTMLElement {
         this.attachShadow({ mode: 'open' })
         this.shadowRoot.innerHTML = /* HTML */`
             <style>
+                :host {
+                    display: block;
+                    max-height: 30vh;
+                    overflow-y: scroll;
+                }
                 :host details > summary {
                     overflow: hidden;
                     text-overflow: ellipsis;
@@ -28,6 +33,7 @@ export default class Sent extends HTMLElement {
                     </details>
                 `
             })
+            this.scroll(0, this.scrollHeight)
         }
     }
 

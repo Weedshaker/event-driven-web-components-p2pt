@@ -5,6 +5,11 @@ export default class Msg extends HTMLElement {
         this.attachShadow({ mode: 'open' })
         this.shadowRoot.innerHTML = /* HTML */`
             <style>
+                :host {
+                    display: block;
+                    max-height: 30vh;
+                    overflow-y: scroll;
+                }
                 :host details > summary {
                     overflow: hidden;
                     text-overflow: ellipsis;
@@ -26,6 +31,7 @@ export default class Msg extends HTMLElement {
                     <div>From PeerId: <span>${event.detail.peer.id}</span></div>
                 </details>
             `
+            this.scroll(0, this.scrollHeight)
         }
     }
 
