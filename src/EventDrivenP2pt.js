@@ -284,6 +284,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       cancelable: true,
       composed: true
     }))
+    this.requestMorePeers()
   }
 
   /**
