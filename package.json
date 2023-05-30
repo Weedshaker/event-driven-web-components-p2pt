@@ -12,5 +12,10 @@
   "devDependencies": {
     "live-server": "*",
     "standard": "*"
+  },
+  "standard": {
+    "ignore": [
+      "/src/p2pt/"
+    ]
   }
 }

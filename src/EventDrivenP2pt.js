@@ -20,7 +20,7 @@ import './p2pt/dist/p2pt.umd.js'
   }} stats
 */
 
-/** 
+/**
  * incoming event
  @typedef {{
   msg: string,
@@ -30,42 +30,42 @@ import './p2pt/dist/p2pt.umd.js'
 }} SendEventDetail
 */
 
-/** 
+/**
  * outgoing event
  @typedef {{
   result: Promise<any>
 }} SentEventDetail
 */
 
-/** 
+/**
  * incoming event
  @typedef {{
   resolve?: (value: string) => void
 }} GetIdentifierEventDetail
 */
 
-/** 
+/**
  * incoming event
  @typedef {{
   identifierString: string
 }} SetIdentifierEventDetail
 */
 
-/** 
+/**
  * outgoing event
  @typedef {{
   result: string
 }} IdentifierEventDetail
 */
 
-/** 
+/**
  * incoming event
  @typedef {{
   resolve?: (value: Promise<any[]>) => void
 }} RequestMorePeersEventDetail
 */
 
-/** 
+/**
  * outgoing event
  @typedef {{
   WebSocketTracker: *,
@@ -73,7 +73,7 @@ import './p2pt/dist/p2pt.umd.js'
 }} TrackerconnectEventDetail
 */
 
-/** 
+/**
  * outgoing event
  @typedef {{
   Error: *,
@@ -81,7 +81,7 @@ import './p2pt/dist/p2pt.umd.js'
 }} TrackerwarningEventDetail
 */
 
-/** 
+/**
  * outgoing event
  @typedef {{
   peer: *,
@@ -89,7 +89,7 @@ import './p2pt/dist/p2pt.umd.js'
 }} PeerconnectEventDetail
 */
 
-/** 
+/**
  * outgoing event
  @typedef {{
   peer: *,
@@ -97,7 +97,7 @@ import './p2pt/dist/p2pt.umd.js'
 }} PeercloseEventDetail
 */
 
-/** 
+/**
  * outgoing event
  @typedef {{
   peer: *,
@@ -105,7 +105,10 @@ import './p2pt/dist/p2pt.umd.js'
 }} MsgEventDetail
 */
 
-/* global ... */
+/* global HTMLElement */
+/* global CustomEvent */
+/* global P2PT */
+/* global self */
 
 /**
  * As a controller, this component becomes a p2pt
@@ -136,7 +139,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     if (typeof options.announceUrls === 'string') this.setAttribute('announce-urls', options.announceUrls)
     /** @type {Promise<string[]>} */
     this.announceUrls = this.getAttribute('announce-urls') || 'https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt,wss://tracker.openwebtorrent.com,wss://tracker.sloppyta.co:443/,wss://tracker.novage.com.ua:443/,wss://tracker.btorrent.xyz:443/'
-  
+
     if (typeof options.identifierString === 'string') this.setAttribute('identifier-string', options.identifierString)
     /** @type {string} */
     this.identifierString = this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components-p2pt'
@@ -145,8 +148,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this._peers = []
     /** @type {stats} */
     this._trackerStats = {
-      'connected': 0,
-      'total': 0
+      connected: 0,
+      total: 0
     }
 
     // global events
@@ -201,7 +204,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       // does not dispatch events, since onPeerconnect and onPeerclose does that part
     }
 
-    /** @type {Promise<import("./p2pt/p2pt").p2pt|any>}*/
+    /** @type {Promise<import("./p2pt/p2pt").p2pt|any>} */
     this.p2pt = this.init(this.announceUrls, this.identifierString)
   }
 
@@ -233,7 +236,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.p2pt.then(p2pt => p2pt.start())
     // global events
     self.addEventListener('focus', this.focusEventListener)
-    self.addEventListener('beforeunload', this.beforeunloadEventListener, {once: true})
+    self.addEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
     // custom events
     this.addEventListener(`${this.namespace}send`, this.sendEventListener)
     this.addEventListener(`${this.namespace}get-identifier`, this.getIdentifierEventListener)
@@ -251,7 +254,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.p2pt.then(p2pt => p2pt.destroy())
     // global events
     self.removeEventListener('focus', this.focusEventListener)
-    self.removeEventListener('beforeunload', this.beforeunloadEventListener, {once: true})
+    self.removeEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
     // custom events
     this.removeEventListener(`${this.namespace}send`, this.sendEventListener)
     this.removeEventListener(`${this.namespace}get-identifier`, this.getIdentifierEventListener)
@@ -300,7 +303,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       composed: true
     }))
   }
-  
+
   /**
    * This event is emitted when a new peer connects.
    *
@@ -431,7 +434,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   get announceUrls () {
     return this._announceUrls || Promise.resolve([])
   }
-  
+
   /**
    * set/add more announce urls
    * @param {string|string[]|any} urls
@@ -456,7 +459,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   static async setAnnounceURLs (urls, existingUrls = []) {
     if (typeof urls === 'string') urls = urls.split(',')
     urls = await Promise.all(urls.map(url => {
-      if (url.includes('http')) return fetch(url).then(response => {
+      if (url.includes('http')) {
+        return fetch(url).then(response => {
         // fetch signaling servers if there is an url to a text list supplied (only supports text yet, if json is need here TODO)
           if (response.status >= 200 && response.status <= 299) return response.text()
           throw new Error(response.statusText)
@@ -464,7 +468,9 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
           const trackers = text.split('\n').filter(text => text)
           if (trackers.length) return trackers
           throw new Error('all entries are empty')
-        }).catch(error => '')
+        // @ts-ignore
+        }).catch(error => console.warn('Error fetching trackers', error) || '')
+      }
       return url
     }))
     return urls.flat().filter(text => text).concat(await existingUrls)
