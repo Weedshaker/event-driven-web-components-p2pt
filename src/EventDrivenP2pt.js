@@ -147,7 +147,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
 
     if (typeof options.identifierString === 'string') this.setAttribute('identifier-string', options.identifierString)
     /** @type {string} */
-    this.identifierString = this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components-p2pt'
+    this.identifierString = this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components'
 
     /** @type {any[]} */
     this._peers = []
@@ -284,7 +284,6 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       cancelable: true,
       composed: true
     }))
-    this.requestMorePeers()
   }
 
   /**
@@ -482,10 +481,10 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    *
    * @static
    * @param {string|string[]|any} urls
-   * @param {Promise<string[]>} [existingUrls=[]]
+   * @param {Promise<string[]>} [existingUrls=Promise.resolve([])]
    * @returns {Promise<string[]>}
    */
-  static async setAnnounceURLs (urls, existingUrls = []) {
+  static async setAnnounceURLs (urls, existingUrls = Promise.resolve([])) {
     if (typeof urls === 'string') urls = urls.split(',')
     urls = await Promise.all(urls.map(url => {
       if (url.includes('http')) {
@@ -502,7 +501,10 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       }
       return url
     }))
-    return urls.flat().filter(text => text).concat(await existingUrls)
+    return urls.flat().filter(text => {
+      if (location.protocol === 'https:' && text.includes('ws:')) return false
+      return text
+    }).concat(await existingUrls)
   }
 
   /**
