@@ -7,19 +7,26 @@
 <body>
   <c-event-driven-p2pt identifier-string="weedshakers-event-driven-web-components-p2pt-example">
     <h1>Simple P2PT capability example</h1>
+    <h2>Tracker stats: <p2pt-trackers></tracker-stats></h2>
+    <h2>Peers: <p2pt-peers></p2pt-peers></h2>
     <h2>Received</h2>
-    <m-messages></m-messages>
+    <p2pt-msg></p2pt-msg>
     <h2>Sent</h2>
-    <m-messages></m-messages>
+    <p2pt-sent></p2pt-sent>
     <h2>Send</h2>
-    <a-send></a-send>
+    <p2pt-send></p2pt-send>
   </c-event-driven-p2pt>
   <script rel=preload type=module>
     /**
      * First level controllers and organisms are loaded and defined here then they may loadChildComponents
      */
     Promise.all([
-      import('./src/EventDrivenP2pt.js').then(module => ['c-event-driven-p2pt', module.EventDrivenP2pt()])
+      import('./src/EventDrivenP2pt.js').then(module => ['c-event-driven-p2pt', module.EventDrivenP2pt()]),
+      import('./src/example/Peers.js').then(module => ['p2pt-peers', module.default]),
+      import('./src/example/Trackers.js').then(module => ['p2pt-trackers', module.default]),
+      import('./src/example/Msg.js').then(module => ['p2pt-msg', module.default]),
+      import('./src/example/Sent.js').then(module => ['p2pt-sent', module.default]),
+      import('./src/example/Send.js').then(module => ['p2pt-send', module.default]),
     ]).then(elements => elements.forEach(element => {
       // don't define already existing customElements
       if (element && !customElements.get(element[0])) customElements.define(...element)

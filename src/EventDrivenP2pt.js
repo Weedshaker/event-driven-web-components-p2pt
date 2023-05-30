@@ -33,7 +33,10 @@ import './p2pt/dist/p2pt.umd.js'
 /**
  * outgoing event
  @typedef {{
-  result: Promise<any>
+  msg: any,
+  peer?: any,
+  msgID?: number|'',
+  sendResult: Promise<any>
 }} SentEventDetail
 */
 
@@ -85,7 +88,8 @@ import './p2pt/dist/p2pt.umd.js'
  * outgoing event
  @typedef {{
   peer: *,
-  peers: *[]
+  peers: *[],
+  _peerId: Promise<string>
 }} PeerconnectEventDetail
 */
 
@@ -93,7 +97,8 @@ import './p2pt/dist/p2pt.umd.js'
  * outgoing event
  @typedef {{
   peer: *,
-  peers: *[]
+  peers: *[],
+  _peerId: Promise<string>
 }} PeercloseEventDetail
 */
 
@@ -163,10 +168,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       const result = await this.send(event.detail.msg, event.detail.peer, event.detail.msgId)
       if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(result)
       this.dispatchEvent(new CustomEvent(`${this.namespace}sent`, {
-        /** @type {SentEventDetail} */
-        detail: {
-          result
-        },
+        /** @type {SentEventDetail[]} */
+        detail: result,
         bubbles: true,
         cancelable: true,
         composed: true
@@ -316,7 +319,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       /** @type {PeerconnectEventDetail} */
       detail: {
         peer,
-        peers: this._peers
+        peers: EventDrivenP2pt.filterPeers(this._peers),
+        _peerId: this.p2pt.then(p2pt => p2pt._peerId)
       },
       bubbles: true,
       cancelable: true,
@@ -336,7 +340,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       /** @type {PeercloseEventDetail} */
       detail: {
         peer,
-        peers: this._peers
+        peers: EventDrivenP2pt.filterPeers(this._peers),
+        _peerId: this.p2pt.then(p2pt => p2pt._peerId)
       },
       bubbles: true,
       cancelable: true,
@@ -352,7 +357,6 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * @return {any}
    */
   onMsg (peer, msg) {
-    console.log(`Got message from ${peer.id} : ${msg}`)
     this.dispatchEvent(new CustomEvent(`${this.namespace}msg`, {
       /** @type {MsgEventDetail} */
       detail: {
@@ -370,14 +374,25 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    *
    * @param {any} msg
    * @param {*} [peer=this.peers]
-   * @param {number} [msgID='']
-   * @return {Promise<any>}
+   * @param {number|''} [msgID='']
+   * @return {Promise<SentEventDetail[]>}
    */
   async send (msg, peer = this.peers, msgID = '') {
-    console.log('send', msg, peer)
     peer = await Promise.resolve(peer)
-    if (Array.isArray(peer)) return peer.map(peer => this.send(msg, peer, msgID))
-    return (await this.p2pt).send(peer, typeof msg === 'string' ? msg : msg.toLocaleString(), msgID)
+    if (Array.isArray(peer)) return peer.map(peer => {
+      return {
+        msg,
+        peer,
+        msgID,
+        sendResult: this.send(msg, peer, msgID)
+      }
+    })
+    return [{
+      msg,
+      peer,
+      msgID,
+      sendResult: (await this.p2pt).send(peer, typeof msg === 'string' ? msg : msg.toLocaleString(), msgID)
+    }]
   }
 
   /**
@@ -418,6 +433,17 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         }
       }
     }
+    return EventDrivenP2pt.filterPeers(peers)
+  }
+
+  /**
+   * Filter all duplicated peers
+   *
+   * @static
+   * @param {*[]} peers
+   * @return {*[]}
+   */
+  static filterPeers (peers) {
     const ids = []
     return peers.filter(peer => {
       const isDouble = ids.includes(peer.id)
