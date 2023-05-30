@@ -379,14 +379,16 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    */
   async send (msg, peer = this.peers, msgID = '') {
     peer = await Promise.resolve(peer)
-    if (Array.isArray(peer)) return peer.map(peer => {
-      return {
-        msg,
-        peer,
-        msgID,
-        sendResult: this.send(msg, peer, msgID)
-      }
-    })
+    if (Array.isArray(peer)) {
+      return peer.map(peer => {
+        return {
+          msg,
+          peer,
+          msgID,
+          sendResult: this.send(msg, peer, msgID)
+        }
+      })
+    }
     return [{
       msg,
       peer,
