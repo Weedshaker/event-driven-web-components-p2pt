@@ -59,6 +59,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     /** @type {string} */
     this.identifierString = this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components-p2pt'
 
+    /** @type {any[]} */
     this._peers = []
     /** @type {stats} */
     this._trackerStats = {
@@ -73,18 +74,50 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     }
     this.beforeunloadEventListener = event => this.disconnectedCallback()
     // custom events
-    this.sendEventListener = event => {
-      const resolveValue = this.send(event.detail.msg, event.detail.peer, event.detail.msgId)
-      if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(resolveValue)
+    this.sendEventListener = async event => {
+      const result = await this.send(event.detail.msg, event.detail.peer, event.detail.msgId)
+      if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(result)
+      this.dispatchEvent(new CustomEvent(`${this.namespace}sent`, {
+        detail: {
+          result
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
     }
-    this.setIdentifierEventListener = event => this.setIdentifier(event.detail.identifierString)
+    // identifier-string
+    this.getIdentifierEventListener = event => {
+      if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(this.getIdentifier())
+      this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
+        detail: {
+          result: this.getIdentifier()
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+    this.setIdentifierEventListener = async event => {
+      const identifierString = await this.setIdentifier(event.detail.identifierString)
+      // must always dispatch an event
+      this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
+        detail: {
+          result: identifierString
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
     this.requestMorePeersEventListener = event => {
       const resolveValue = this.requestMorePeers()
       if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(resolveValue)
+      // does not dispatch events, since onPeerconnect and onPeerclose does that part
     }
 
     /** @type {Promise<import("./p2pt/p2pt").p2pt|any>}*/
-    this.p2pt = new Promise(resolve => this.init(this.announceUrls, this.identifierString, resolve))
+    this.p2pt = this.init(this.announceUrls, this.identifierString)
   }
 
   /**
@@ -92,18 +125,17 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    *
    * @param {Promise<string[]>} announceUrls
    * @param {string} identifierString
-   * @param {(any)=>void} resolve
-   * @return {Promise<void>}
+   * @return {Promise<import("./p2pt/p2pt").p2pt|any>}
    */
-  async init (announceUrls, identifierString, resolve) {
-    let p2pt
-    resolve(p2pt = new P2PT(await announceUrls, identifierString))
+  async init (announceUrls, identifierString) {
+    const p2pt = new P2PT(await announceUrls, identifierString)
     // p2pt events
     p2pt.on('trackerconnect', (WebSocketTracker, stats) => this.onTrackerconnect(WebSocketTracker, stats))
     p2pt.on('trackerwarning', (Error, stats) => this.onTrackerwarning(Error, stats))
     p2pt.on('peerconnect', peer => this.onPeerconnect(peer))
     p2pt.on('peerclose', peer => this.onPeerclose(peer))
     p2pt.on('msg', (peer, msg) => this.onMsg(peer, msg))
+    return p2pt
   }
 
   /**
@@ -119,6 +151,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     self.addEventListener('beforeunload', this.beforeunloadEventListener, {once: true})
     // custom events
     this.addEventListener(`${this.namespace}send`, this.sendEventListener)
+    this.addEventListener(`${this.namespace}get-identifier`, this.getIdentifierEventListener)
     this.addEventListener(`${this.namespace}set-identifier`, this.setIdentifierEventListener)
     this.addEventListener(`${this.namespace}request-more-peers`, this.requestMorePeersEventListener)
   }
@@ -136,6 +169,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     self.removeEventListener('beforeunload', this.beforeunloadEventListener, {once: true})
     // custom events
     this.removeEventListener(`${this.namespace}send`, this.sendEventListener)
+    this.removeEventListener(`${this.namespace}get-identifier`, this.getIdentifierEventListener)
     this.removeEventListener(`${this.namespace}set-identifier`, this.setIdentifierEventListener)
     this.removeEventListener(`${this.namespace}request-more-peers`, this.requestMorePeersEventListener)
   }
@@ -244,56 +278,35 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * @param {any} msg
    * @param {*} [peer=this.peers]
    * @param {string} [msgID='']
-   * @param {boolean} [dispatchEvent=true]
    * @return {Promise<any>}
    */
-  async send (msg, peer = this.peers, msgID = '', dispatchEvent = true) {
+  async send (msg, peer = this.peers, msgID = '') {
     console.log('send', msg, peer)
     peer = await Promise.resolve(peer)
-    if (Array.isArray(peer)) {
-      const result = peer.map(peer => this.send(msg, peer, msgID, false))
-      if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}sent`, {
-        detail: {
-          result
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-      return result
-    }
-    const result = (await this.p2pt).send(peer, typeof msg === 'string' ? msg : msg.toLocaleString(), msgID)
-    if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}sent`, {
-      detail: {
-        result
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
-    return result
+    if (Array.isArray(peer)) return peer.map(peer => this.send(msg, peer, msgID))
+    return (await this.p2pt).send(peer, typeof msg === 'string' ? msg : msg.toLocaleString(), msgID)
+  }
+
+  /**
+   * Gets the identifier string used to discover peers in the network (room)
+   *
+   * @return {string}
+   */
+  getIdentifier () {
+    return this.identifierString
   }
 
   /**
    * Sets the identifier string used to discover peers in the network (room)
    *
    * @param {string} identifierString
-   * @return {void}
+   * @return {Promise<string>}
    */
-  setIdentifier (identifierString) {
+  async setIdentifier (identifierString) {
+    const p2pt = await this.p2pt
     this.identifierString = identifierString
     this.setAttribute('identifier-string', identifierString)
-    this.p2pt.then(p2pt => {
-      p2pt.setIdentifier(identifierString)
-      this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
-        detail: {
-          identifierString
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-    })
+    return (await p2pt.setIdentifier(identifierString)) || identifierString
   }
 
   /**
