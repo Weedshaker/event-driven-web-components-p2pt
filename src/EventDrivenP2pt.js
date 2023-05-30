@@ -4,12 +4,14 @@ import './p2pt/dist/p2pt.umd.js'
 
 // https://github.com/subins2000/p2pt/blob/master/api-docs.md#new-p2ptannounceurls---identifierstring--
 /**
+ * Constructor options
  @typedef {{
     namespace?: string,
     announceUrls?: string,
     identifierString?: string,
  }} options
 */
+
 /**
  * stats
  @typedef {{
@@ -18,9 +20,49 @@ import './p2pt/dist/p2pt.umd.js'
   }} stats
 */
 
- /** @typedef {{
-  info: ...
-}} ExplEventDetail
+/** 
+ * incoming event
+ @typedef {{
+  msg: string,
+  peer?: *,
+  msgId?: number,
+  resolve?: (value: Promise<any>) => void
+}} SendEventDetail
+*/
+
+/** 
+ * outgoing event
+ @typedef {{
+  result: Promise<any>
+}} SentEventDetail
+*/
+
+/** 
+ * incoming event
+ @typedef {{
+  resolve?: (value: string) => void
+}} GetIdentifierEventDetail
+*/
+
+/** 
+ * incoming event
+ @typedef {{
+  identifierString: string
+}} SetIdentifierEventDetail
+*/
+
+/** 
+ * outgoing event
+ @typedef {{
+  result: string
+}} IdentifierEventDetail
+*/
+
+/** 
+ * incoming event
+ @typedef {{
+  resolve?: (value: Promise<any[]>) => void
+}} RequestMorePeersEventDetail
 */
 
 /* global ... */
@@ -74,10 +116,11 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     }
     this.beforeunloadEventListener = event => this.disconnectedCallback()
     // custom events
-    this.sendEventListener = async event => {
+    this.sendEventListener = /** @param {CustomEvent & {detail: SendEventDetail}} event */ async event => {
       const result = await this.send(event.detail.msg, event.detail.peer, event.detail.msgId)
       if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(result)
       this.dispatchEvent(new CustomEvent(`${this.namespace}sent`, {
+        /** @type {SentEventDetail} */
         detail: {
           result
         },
@@ -87,9 +130,10 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       }))
     }
     // identifier-string
-    this.getIdentifierEventListener = event => {
+    this.getIdentifierEventListener = /** @param {CustomEvent & {detail: GetIdentifierEventDetail}} event */ event => {
       if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(this.getIdentifier())
       this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
+        /** @type {IdentifierEventDetail} */
         detail: {
           result: this.getIdentifier()
         },
@@ -98,10 +142,11 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         composed: true
       }))
     }
-    this.setIdentifierEventListener = async event => {
+    this.setIdentifierEventListener = /** @param {CustomEvent & {detail: SetIdentifierEventDetail}} event */ async event => {
       const identifierString = await this.setIdentifier(event.detail.identifierString)
       // must always dispatch an event
       this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
+        /** @type {IdentifierEventDetail} */
         detail: {
           result: identifierString
         },
@@ -110,7 +155,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         composed: true
       }))
     }
-    this.requestMorePeersEventListener = event => {
+    this.requestMorePeersEventListener = /** @param {CustomEvent & {detail: RequestMorePeersEventDetail}} event */ event => {
       const resolveValue = this.requestMorePeers()
       if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(resolveValue)
       // does not dispatch events, since onPeerconnect and onPeerclose does that part
@@ -277,7 +322,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    *
    * @param {any} msg
    * @param {*} [peer=this.peers]
-   * @param {string} [msgID='']
+   * @param {number} [msgID='']
    * @return {Promise<any>}
    */
   async send (msg, peer = this.peers, msgID = '') {
