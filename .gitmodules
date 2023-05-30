@@ -1,3 +1,6 @@
 [submodule "src/p2pt"]
 	path = src/p2pt
 	url = https://github.com/subins2000/p2pt.git
+[submodule "src/weedshaker-p2pt"]
+	path = src/weedshaker-p2pt
+	url = https://github.com/Weedshaker/p2pt.git

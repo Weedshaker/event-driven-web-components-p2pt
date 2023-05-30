@@ -1,6 +1,6 @@
 // @ts-check
 
-import './p2pt/dist/p2pt.umd.js'
+import './weedshaker-p2pt/dist/p2pt.umd.js'
 
 // https://github.com/subins2000/p2pt/blob/master/api-docs.md#new-p2ptannounceurls---identifierstring--
 /**
