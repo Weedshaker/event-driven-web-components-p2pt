@@ -252,7 +252,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     peer = await Promise.resolve(peer)
     if (Array.isArray(peer)) {
       const result = peer.map(peer => this.send(msg, peer, msgID, false))
-      if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}send`, {
+      if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}sent`, {
         detail: {
           result
         },
@@ -263,7 +263,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       return result
     }
     const result = (await this.p2pt).send(peer, typeof msg === 'string' ? msg : msg.toLocaleString(), msgID)
-    if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}send`, {
+    if (dispatchEvent) this.dispatchEvent(new CustomEvent(`${this.namespace}sent`, {
       detail: {
         result
       },
@@ -285,7 +285,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.setAttribute('identifier-string', identifierString)
     this.p2pt.then(p2pt => {
       p2pt.setIdentifier(identifierString)
-      this.dispatchEvent(new CustomEvent(`${this.namespace}set-identifier`, {
+      this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
         detail: {
           identifierString
         },
