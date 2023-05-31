@@ -50,7 +50,8 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
 /**
  * incoming event
  @typedef {{
-  identifierString: string
+  identifierString: string,
+  setAttribute?: boolean
 }} SetIdentifierEventDetail
 */
 
@@ -163,7 +164,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
 
     // global events
     this.focusEventListener = event => this.getPeers(true)
-    this.beforeunloadEventListener = event => this.p2pt.then(p2pt => p2pt.destroy())
+    this.beforeunloadEventListener = event => this.destroy()
     // custom events
     this.sendEventListener = /** @param {any & {detail: SendEventDetail}} event */ async event => {
       const result = await this.send(event.detail.msg, event.detail.peer, event.detail.msgId)
@@ -190,7 +191,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       }))
     }
     this.setIdentifierEventListener = /** @param {any & {detail: SetIdentifierEventDetail}} event */ async event => {
-      const identifierString = await this.setIdentifier(event.detail.identifierString)
+      const identifierString = await this.setIdentifier(event.detail.identifierString, event.detail.setAttribute)
       // must always dispatch an event
       this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
         /** @type {IdentifierEventDetail} */
@@ -210,6 +211,17 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
 
     /** @type {Promise<import("./p2pt/p2pt").p2pt|any>} */
     this.p2pt = this.init(this.announceUrls, this.identifierString)
+
+    /** @type {number|null|*} */
+    this.identifierStringIntervalId = null
+    /** @type {number|null|*} */
+    this.identifierStringTimeoutId = null
+    /**
+     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 100 seconds
+     * 
+     * @type {number}
+     */
+    this.identifierStringIntervalDelay = (100 * 1000)
   }
 
   /**
@@ -230,6 +242,29 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     return p2pt
   }
 
+  async start () {
+    (await this.p2pt).start()
+    clearTimeout(this.identifierStringTimeoutId)
+    clearInterval(this.identifierStringIntervalId)
+    const getEpochFlooredToSeconds = () => Math.floor(Date.now()/this.identifierStringIntervalDelay)
+    const startEpochFlooredToSeconds = getEpochFlooredToSeconds() + 1
+    console.log('epoch time', {startEpochFlooredToSeconds: startEpochFlooredToSeconds, oldEpochFlooredToSeconds: startEpochFlooredToSeconds - 1, now: Date.now(), msUntilInterval: (startEpochFlooredToSeconds * this.identifierStringIntervalDelay) - Date.now()});
+    this.identifierStringTimeoutId = setTimeout(() => {
+      const intervalFunc = () => {
+        // 
+        console.log('epoch time', {startEpochFlooredToSeconds, getEpochFlooredToSeconds: getEpochFlooredToSeconds(), now: Date.now()});
+      }
+      intervalFunc()
+      this.identifierStringIntervalId = setInterval(intervalFunc, this.identifierStringIntervalDelay);
+    }, (startEpochFlooredToSeconds * this.identifierStringIntervalDelay) - Date.now());
+  }
+
+  destroy () {
+    clearTimeout(this.identifierStringTimeoutId)
+    clearInterval(this.identifierStringIntervalId)
+    this.p2pt.then(p2pt => p2pt.destroy())
+  }
+
   /**
    * Lifecycle callback, triggered when node is attached to the dom
    * must be here as a placeholder
@@ -237,7 +272,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * @return {void}
    */
   connectedCallback () {
-    this.p2pt.then(p2pt => p2pt.start())
+    this.start()
     // global events
     self.addEventListener('focus', this.focusEventListener)
     self.addEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
@@ -266,7 +301,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   }
 
   attributeChangedCallback (name, oldValue, newValue) {
-    if (name === 'identifier-string') this.setIdentifier(newValue, false)
+    if (name === 'identifier-string') this.setIdentifierEventListener({detail: {identifierString: newValue, setAttribute: false}})
   }
 
   /**

@@ -7,7 +7,8 @@
 <body>
   <c-event-driven-p2pt identifier-string="weedshakers-event-driven-web-components-12345" announce-urls="https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt">
     <h1>Simple P2PT capability example</h1>
-    <h2>Tracker stats: <p2pt-trackers></tracker-stats></h2>
+    <h2>Identifier String: <p2pt-identifier-string><p2pt-identifier-string></h2>
+    <h2>Tracker stats: <p2pt-trackers></p2pt-trackers></h2>
     <h2>Peers: <p2pt-peers></p2pt-peers></h2>
     <h2>Received</h2>
     <p2pt-msg></p2pt-msg>
@@ -22,8 +23,9 @@
      */
     Promise.all([
       import('./src/EventDrivenP2pt.js').then(module => ['c-event-driven-p2pt', module.EventDrivenP2pt()]),
-      import('./src/example/Peers.js').then(module => ['p2pt-peers', module.default]),
+      import('./src/example/IdentifierString.js').then(module => ['p2pt-identifier-string', module.default]),
       import('./src/example/Trackers.js').then(module => ['p2pt-trackers', module.default]),
+      import('./src/example/Peers.js').then(module => ['p2pt-peers', module.default]),
       import('./src/example/Msg.js').then(module => ['p2pt-msg', module.default]),
       import('./src/example/Sent.js').then(module => ['p2pt-sent', module.default]),
       import('./src/example/Send.js').then(module => ['p2pt-send', module.default]),
