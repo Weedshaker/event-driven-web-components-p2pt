@@ -237,11 +237,11 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     /** @type {number|null|*} */
     this.randomTimeoutId = null
     /**
-     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 30 seconds
+     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 50 seconds
      * 
      * @type {number}
      */
-    this.identifierStringIntervalDelay = (30 * 1000)
+    this.identifierStringIntervalDelay = (50 * 1000)
     /** @type {string} */
     this.epochSecondsSeparator = '--epoch_seconds--'
   }
@@ -270,6 +270,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.stop()
     const getEpochFlooredToSeconds = () => Math.floor(Date.now()/this.identifierStringIntervalDelay)
     const startEpochFlooredToSeconds = getEpochFlooredToSeconds() + 1
+    // start at first jump before interval
+    this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${getEpochFlooredToSeconds()}`)
     this.identifierStringTimeoutId = setTimeout(() => {
       const intervalFunc = () => {
         clearTimeout(this.randomTimeoutId)

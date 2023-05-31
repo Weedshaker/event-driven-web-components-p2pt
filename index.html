@@ -21,19 +21,20 @@
     /**
      * First level controllers and organisms are loaded and defined here then they may loadChildComponents
      */
+    const version = '009'
     Promise.all([
-      import('./src/EventDrivenP2pt.js').then(module => ['c-event-driven-p2pt', module.EventDrivenP2pt()]),
-      import('./src/example/IdentifierString.js').then(module => ['p2pt-identifier-string', module.default]),
-      import('./src/example/Trackers.js').then(module => ['p2pt-trackers', module.default]),
-      import('./src/example/Peers.js').then(module => ['p2pt-peers', module.default]),
-      import('./src/example/Msg.js').then(module => ['p2pt-msg', module.default]),
-      import('./src/example/Sent.js').then(module => ['p2pt-sent', module.default]),
-      import('./src/example/Send.js').then(module => ['p2pt-send', module.default]),
+      import(`./src/EventDrivenP2pt.js?${version}`).then(module => ['c-event-driven-p2pt', module.EventDrivenP2pt()]),
+      import(`./src/example/IdentifierString.js?${version}`).then(module => ['p2pt-identifier-string', module.default]),
+      import(`./src/example/Trackers.js?${version}`).then(module => ['p2pt-trackers', module.default]),
+      import(`./src/example/Peers.js?${version}`).then(module => ['p2pt-peers', module.default]),
+      import(`./src/example/Msg.js?${version}`).then(module => ['p2pt-msg', module.default]),
+      import(`./src/example/Sent.js?${version}`).then(module => ['p2pt-sent', module.default]),
+      import(`./src/example/Send.js?${version}`).then(module => ['p2pt-send', module.default]),
     ]).then(elements => elements.forEach(element => {
       // don't define already existing customElements
       if (element && !customElements.get(element[0])) customElements.define(...element)
     }))
   </script>
-  <code>v.0.0.8</code>
+  <code>v.0.0.9</code>
 </body>
 </html>
