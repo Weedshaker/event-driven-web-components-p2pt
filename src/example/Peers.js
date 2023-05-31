@@ -14,14 +14,24 @@ export default class Peers extends HTMLElement {
     this.appendChild(details)
     this.peerconnectEventListener = event => {
       details.querySelector('summary').textContent = event.detail.peers.length
-      event.detail._peerId.then(peerId => (details.querySelector('div > span').textContent = peerId))
+      if (event.detail._peerId) event.detail._peerId.then(peerId => (details.querySelector('div > span').textContent = peerId))
       details.querySelector('div > ul').innerHTML = event.detail.peers.reduce((acc, peer) => `${acc}<li>${peer.id}</li>`, '')
     }
   }
 
   connectedCallback () {
     document.body.addEventListener('p2pt-peerconnect', this.peerconnectEventListener)
-    document.body.addEventListener('p2pt-peerclose', this.peerconnectEventListener)
+    document.body.addEventListener('p2pt-peerclose', this.peerconnectEventListener);
+    (new Promise(resolve => this.dispatchEvent(new CustomEvent('p2pt-request-more-peers', {
+      /** @type {import("../EventDrivenP2pt.js").RequestMorePeersEventDetail} */
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))).then(peers => this.peerconnectEventListener({ detail: { peers }}))
+    
   }
 
   disconnectedCallback () {
