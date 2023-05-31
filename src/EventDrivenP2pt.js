@@ -170,9 +170,10 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     }
 
     // global events
-    this.focusEventListener = event => {
-      this.getPeers(true)
+    this.focusEventListener = async event => {
+      await this.destroy()
       this.start()
+      this.getPeers(true)
     }
     // it's not good to stop the interval on blur, gets out of sync
     //this.blurEventListener = event => this.stop()
@@ -272,9 +273,9 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         const epochFlooredToSeconds = getEpochFlooredToSeconds()
         // set a random timeout of max half the this.identifierStringIntervalDelay time, so that different peers connect to different moments but always theoretically meet
         this.randomTimeoutId = setTimeout(() => {
-          this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${epochFlooredToSeconds}`), Math.floor(Math.random() * (this.identifierStringIntervalDelay / 2))
+          this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${epochFlooredToSeconds}`)
           this.getPeers(true)
-        })
+        }, Math.floor(Math.random() * (this.identifierStringIntervalDelay / 2)))
       }
       intervalFunc()
       this.identifierStringIntervalId = setInterval(intervalFunc, this.identifierStringIntervalDelay);
@@ -287,9 +288,9 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     clearTimeout(this.randomTimeoutId)
   }
 
-  destroy () {
-    this.stop()
-    this.p2pt.then(p2pt => p2pt.destroy())
+  async destroy () {
+    this.stop();
+    (await this.p2pt).destroy()
   }
 
   /**
