@@ -170,7 +170,11 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     }
 
     // global events
-    this.focusEventListener = event => this.getPeers(true)
+    this.focusEventListener = event => {
+      this.getPeers(true)
+      this.start()
+    }
+    this.blurEventListener = event => this.stop()
     this.beforeunloadEventListener = event => this.destroy()
     // custom events
     this.sendEventListener = /** @param {any & {detail: SendEventDetail}} event */ async event => {
@@ -268,12 +272,17 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         // set a random timeout of max half the this.identifierStringIntervalDelay time, so that different peers connect to different moments but always theoretically meet
         randomTimeoutId = setTimeout(() => {
           this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${epochFlooredToSeconds}`), Math.floor(Math.random() * (this.identifierStringIntervalDelay / 2))
-          this.p2pt.then(p2pt => p2pt.requestMorePeers())
+          this.getPeers(true)
         })
       }
       intervalFunc()
       this.identifierStringIntervalId = setInterval(intervalFunc, this.identifierStringIntervalDelay);
     }, (startEpochFlooredToSeconds * this.identifierStringIntervalDelay) - Date.now());
+  }
+
+  stop () {
+    clearTimeout(this.identifierStringTimeoutId)
+    clearInterval(this.identifierStringIntervalId)
   }
 
   destroy () {
@@ -292,6 +301,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.start()
     // global events
     self.addEventListener('focus', this.focusEventListener)
+    self.addEventListener('blur', this.blurEventListener)
     self.addEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
     // custom events
     this.addEventListener(`${this.namespace}send`, this.sendEventListener)
@@ -309,6 +319,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   disconnectedCallback () {
     // global events
     self.removeEventListener('focus', this.focusEventListener)
+    self.removeEventListener('blur', this.blurEventListener)
     self.removeEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
     // custom events
     this.removeEventListener(`${this.namespace}send`, this.sendEventListener)
