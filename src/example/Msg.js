@@ -9,7 +9,7 @@ export default class Msg extends HTMLElement {
             <style>
                 :host {
                     display: block;
-                    max-height: 30vh;
+                    max-height: max(10vh, 3em);
                     overflow-y: scroll;
                 }
                 :host details > summary {
