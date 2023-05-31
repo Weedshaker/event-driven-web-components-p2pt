@@ -266,7 +266,10 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         clearTimeout(randomTimeoutId)
         const epochFlooredToSeconds = getEpochFlooredToSeconds()
         // set a random timeout of max half the this.identifierStringIntervalDelay time, so that different peers connect to different moments but always theoretically meet
-        randomTimeoutId = setTimeout(() => this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${epochFlooredToSeconds}`), Math.floor(Math.random() * (this.identifierStringIntervalDelay / 2)));
+        randomTimeoutId = setTimeout(() => {
+          this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${epochFlooredToSeconds}`), Math.floor(Math.random() * (this.identifierStringIntervalDelay / 2))
+          this.p2pt.then(p2pt => p2pt.requestMorePeers())
+        })
       }
       intervalFunc()
       this.identifierStringIntervalId = setInterval(intervalFunc, this.identifierStringIntervalDelay);
