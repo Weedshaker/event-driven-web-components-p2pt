@@ -4,7 +4,7 @@ export default class IdentifierString extends HTMLElement {
   constructor (...args) {
     super(...args)
 
-    this.identifierStringEventListener = event => (this.textContent = event.detail.result)
+    this.identifierStringEventListener = event => (this.textContent = event.detail.resultWithEpoch)
   }
 
   connectedCallback () {

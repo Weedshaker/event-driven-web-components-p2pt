@@ -58,7 +58,8 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
 /**
  * outgoing event
  @typedef {{
-  result: string
+  result: string,
+  resultWithEpoch: string
 }} IdentifierEventDetail
 */
 
@@ -158,8 +159,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.announceUrls = this.getAttribute('announce-urls') || 'https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt,wss://tracker.openwebtorrent.com,wss://tracker.sloppyta.co:443/,wss://tracker.novage.com.ua:443/,wss://tracker.btorrent.xyz:443/'
 
     if (typeof options.identifierString === 'string') this.setAttribute('identifier-string', options.identifierString)
-    /** @type {string} */
-    this.identifierString = this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components'
+    this.setAttribute('identifier-string', this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components')
 
     /** @type {any[]} */
     this._peers = []
@@ -190,7 +190,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
         /** @type {IdentifierEventDetail} */
         detail: {
-          result: this.getIdentifier()
+          result: this.cleanIdentifierString(this.getIdentifier()),
+          resultWithEpoch: this.getIdentifier()
         },
         bubbles: true,
         cancelable: true,
@@ -203,7 +204,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       this.dispatchEvent(new CustomEvent(`${this.namespace}identifier-string`, {
         /** @type {IdentifierEventDetail} */
         detail: {
-          result: identifierString
+          result: this.cleanIdentifierString(identifierString),
+          resultWithEpoch: identifierString
         },
         bubbles: true,
         cancelable: true,
@@ -224,11 +226,13 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     /** @type {number|null|*} */
     this.identifierStringTimeoutId = null
     /**
-     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 100 seconds
+     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 30 seconds
      * 
      * @type {number}
      */
-    this.identifierStringIntervalDelay = (100 * 1000)
+    this.identifierStringIntervalDelay = (30 * 1000)
+    /** @type {string} */
+    this.epochSecondsSeparator = '--epoch_seconds--'
   }
 
   /**
@@ -251,15 +255,18 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
 
   async start () {
     (await this.p2pt).start()
+    // to find more peers, we use a sub name of the identifier string with a fix interval based on epoch time to keep searching/announcing in new rooms
     clearTimeout(this.identifierStringTimeoutId)
     clearInterval(this.identifierStringIntervalId)
     const getEpochFlooredToSeconds = () => Math.floor(Date.now()/this.identifierStringIntervalDelay)
     const startEpochFlooredToSeconds = getEpochFlooredToSeconds() + 1
-    console.log('epoch time', {startEpochFlooredToSeconds: startEpochFlooredToSeconds, oldEpochFlooredToSeconds: startEpochFlooredToSeconds - 1, now: Date.now(), msUntilInterval: (startEpochFlooredToSeconds * this.identifierStringIntervalDelay) - Date.now()});
     this.identifierStringTimeoutId = setTimeout(() => {
+      let randomTimeoutId = null
       const intervalFunc = () => {
-        // 
-        console.log('epoch time', {startEpochFlooredToSeconds, getEpochFlooredToSeconds: getEpochFlooredToSeconds(), now: Date.now()});
+        clearTimeout(randomTimeoutId)
+        const epochFlooredToSeconds = getEpochFlooredToSeconds()
+        // set a random timeout of max half the this.identifierStringIntervalDelay time, so that different peers connect to different moments but always theoretically meet
+        randomTimeoutId = setTimeout(() => this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${epochFlooredToSeconds}`), Math.floor(Math.random() * (this.identifierStringIntervalDelay / 2)));
       }
       intervalFunc()
       this.identifierStringIntervalId = setInterval(intervalFunc, this.identifierStringIntervalDelay);
@@ -308,7 +315,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   }
 
   attributeChangedCallback (name, oldValue, newValue) {
-    if (name === 'identifier-string') this.setIdentifierEventListener({detail: {identifierString: newValue, setAttribute: false}})
+    if (name === 'identifier-string' && this.getIdentifier() !== newValue) this.setIdentifierEventListener({detail: {identifierString: newValue, setAttribute: false}})
   }
 
   /**
@@ -463,6 +470,16 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.identifierString = identifierString
     if (setAttribute) this.setAttribute('identifier-string', identifierString)
     return (await (await this.p2pt).setIdentifier(identifierString)) || identifierString
+  }
+
+  /**
+   * remove the epoch time counter
+   *
+   * @param {string} identifierString
+   * @return {string}
+   */
+  cleanIdentifierString (identifierString) {
+    return identifierString.replace(new RegExp(`${this.epochSecondsSeparator}.*`), '')
   }
 
   /**
