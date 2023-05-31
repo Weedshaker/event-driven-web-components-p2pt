@@ -237,11 +237,11 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     /** @type {number|null|*} */
     this.randomTimeoutId = null
     /**
-     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 60 seconds
+     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 30 seconds
      * 
      * @type {number}
      */
-    this.identifierStringIntervalDelay = (60 * 1000)
+    this.identifierStringIntervalDelay = (30 * 1000)
     /** @type {string} */
     this.epochSecondsSeparator = '--epoch_seconds--'
   }
