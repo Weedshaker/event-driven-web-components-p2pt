@@ -63,6 +63,13 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
 */
 
 /**
+ * outgoing event
+ @typedef {{
+  result: *[]
+}} PeersEventDetail
+*/
+
+/**
  * incoming event
  @typedef {{
   requestMorePeers?: boolean,
@@ -206,7 +213,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.getPeersEventListener = /** @param {any & {detail: GetPeersEventDetail}} event */ event => {
       const resolveValue = this.getPeers(event?.detail.requestMorePeers)
       if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(resolveValue)
-      // does not dispatch events, since onPeerconnect and onPeerclose does that part
+      // does always dispatch an event on getPeers
     }
 
     /** @type {Promise<import("./p2pt/p2pt").p2pt|any>} */
@@ -466,7 +473,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    */
   async getPeers (requestMorePeers = false) {
     const trackers = requestMorePeers ? await (await this.p2pt).requestMorePeers() : (await this.p2pt).peers
-    const peers = this._peers
+    let peers = this._peers
     for (const key in trackers) {
       if (Object.hasOwnProperty.call(trackers, key)) {
         const tracker = trackers[key]
@@ -475,7 +482,17 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         }
       }
     }
-    return EventDrivenP2pt.filterPeers(peers)
+    peers = EventDrivenP2pt.filterPeers(peers)
+    this.dispatchEvent(new CustomEvent(`${this.namespace}peers`, {
+      /** @type {PeersEventDetail} */
+      detail: {
+        result: peers
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+    return peers
   }
 
   /**
