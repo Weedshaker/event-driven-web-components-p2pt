@@ -66,7 +66,8 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
 /**
  * outgoing event
  @typedef {{
-  result: *[]
+  result: *[],
+  newPeers: *[]
 }} PeersEventDetail
 */
 
@@ -163,6 +164,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
 
     /** @type {any[]} */
     this._peers = []
+    /** @type {any[]} */
+    this._lastPeers = []
     /** @type {stats} */
     this._trackerStats = {
       connected: 0,
@@ -234,11 +237,11 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     /** @type {number|null|*} */
     this.randomTimeoutId = null
     /**
-     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 30 seconds
+     * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 10 seconds
      * 
      * @type {number}
      */
-    this.identifierStringIntervalDelay = (30 * 1000)
+    this.identifierStringIntervalDelay = (10 * 1000)
     /** @type {string} */
     this.epochSecondsSeparator = '--epoch_seconds--'
   }
@@ -507,25 +510,31 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   async getPeers (requestMorePeers = false) {
     const trackers = requestMorePeers ? await (await this.p2pt).requestMorePeers() : (await this.p2pt).peers
     let peers = this._peers
+    let newPeers = []
     for (const key in trackers) {
       if (Object.hasOwnProperty.call(trackers, key)) {
         const tracker = trackers[key]
         for (const key in tracker) {
-          if (Object.hasOwnProperty.call(tracker, key)) peers.push(tracker[key])
+          if (Object.hasOwnProperty.call(tracker, key)) {
+            peers.push(tracker[key])
+            if (!this._lastPeers.includes(tracker[key])) newPeers.push(tracker[key])
+          }
         }
       }
     }
     peers = EventDrivenP2pt.filterPeers(peers)
+    newPeers = EventDrivenP2pt.filterPeers(newPeers)
     this.dispatchEvent(new CustomEvent(`${this.namespace}peers`, {
       /** @type {PeersEventDetail} */
       detail: {
-        result: peers
+        result: peers,
+        newPeers
       },
       bubbles: true,
       cancelable: true,
       composed: true
     }))
-    return peers
+    return (this._lastPeers = peers)
   }
 
   /**

@@ -10,6 +10,7 @@ export default class Peers extends HTMLElement {
             <div>Own PeerId: <span></span></div>
             <hr>
             <div>Other Peers: <ul></ul></div>
+            <div>New Peers: <ul id=new-peers></ul></div>
         `
     this.appendChild(details)
     this.peerconnectEventListener = async event => {
@@ -17,6 +18,7 @@ export default class Peers extends HTMLElement {
       details.querySelector('summary').textContent = peers.length
       if (event.detail._peerId) event.detail._peerId.then(peerId => (details.querySelector('div > span').textContent = peerId))
       details.querySelector('div > ul').innerHTML = peers.reduce((acc, peer) => `${acc}<li>${peer.id}</li>`, '')
+      if (event.detail.newPeers) details.querySelector('div > ul#new-peers').innerHTML = event.detail.newPeers.reduce((acc, peer) => `${acc}<li>${peer.id}</li>`, '')
     }
   }
 
