@@ -13,7 +13,7 @@
 ## TODO
 - [x] types and event interfaces
 - [x] example demo
-- [] attribute change callback for identifier
+- [x] attribute change callback for identifier
 - [] query parameter for identifier
 - [] dynamic name for identifier "Math.floor(Date.now()/100000)"
 

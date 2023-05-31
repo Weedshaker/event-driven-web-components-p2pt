@@ -128,6 +128,9 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
  * }
  */
 export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventDrivenP2pt extends ChosenHTMLElement {
+  static get observedAttributes () {
+    return ['identifier-string']
+  }
   /**
    * Creates an instance of EventDrivenP2pt. The constructor will be called for every custom element using this class when initially created.
    *
@@ -260,6 +263,10 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.removeEventListener(`${this.namespace}get-identifier`, this.getIdentifierEventListener)
     this.removeEventListener(`${this.namespace}set-identifier`, this.setIdentifierEventListener)
     this.removeEventListener(`${this.namespace}get-peers`, this.getPeersEventListener)
+  }
+
+  attributeChangedCallback (name, oldValue, newValue) {
+    if (name === 'identifier-string') this.setIdentifier(newValue, false)
   }
 
   /**
@@ -407,13 +414,13 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * Sets the identifier string used to discover peers in the network (room)
    *
    * @param {string} identifierString
+   * @param {boolean} [setAttribute=true]
    * @return {Promise<string>}
    */
-  async setIdentifier (identifierString) {
-    const p2pt = await this.p2pt
+  async setIdentifier (identifierString, setAttribute = true) {
     this.identifierString = identifierString
-    this.setAttribute('identifier-string', identifierString)
-    return (await p2pt.setIdentifier(identifierString)) || identifierString
+    if (setAttribute) this.setAttribute('identifier-string', identifierString)
+    return (await (await this.p2pt).setIdentifier(identifierString)) || identifierString
   }
 
   /**
