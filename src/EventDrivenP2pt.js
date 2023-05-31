@@ -64,8 +64,9 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
 /**
  * incoming event
  @typedef {{
+  requestMorePeers?: boolean,
   resolve?: (value: Promise<any[]>) => void
-}} RequestMorePeersEventDetail
+}} GetPeersEventDetail
 */
 
 /**
@@ -88,7 +89,7 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
  * outgoing event
  @typedef {{
   peer: *,
-  peers: *[],
+  peers: Promise<*[]>,
   _peerId: Promise<string>
 }} PeerconnectEventDetail
 */
@@ -97,7 +98,7 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
  * outgoing event
  @typedef {{
   peer: *,
-  peers: *[],
+  peers: Promise<*[]>,
   _peerId: Promise<string>
 }} PeercloseEventDetail
 */
@@ -158,11 +159,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     }
 
     // global events
-    this.focusEventListener = event => {
-      this.connectedCallback()
-      this.requestMorePeers()
-    }
-    this.beforeunloadEventListener = event => this.disconnectedCallback()
+    this.focusEventListener = event => this.getPeers(true)
+    this.beforeunloadEventListener = event => this.p2pt.then(p2pt => p2pt.destroy())
     // custom events
     this.sendEventListener = /** @param {any & {detail: SendEventDetail}} event */ async event => {
       const result = await this.send(event.detail.msg, event.detail.peer, event.detail.msgId)
@@ -201,8 +199,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         composed: true
       }))
     }
-    this.requestMorePeersEventListener = /** @param {any & {detail: RequestMorePeersEventDetail}} event */ event => {
-      const resolveValue = this.requestMorePeers()
+    this.getPeersEventListener = /** @param {any & {detail: GetPeersEventDetail}} event */ event => {
+      const resolveValue = this.getPeers(event?.detail.requestMorePeers)
       if (typeof event?.detail?.resolve === 'function') return event.detail.resolve(resolveValue)
       // does not dispatch events, since onPeerconnect and onPeerclose does that part
     }
@@ -244,7 +242,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.addEventListener(`${this.namespace}send`, this.sendEventListener)
     this.addEventListener(`${this.namespace}get-identifier`, this.getIdentifierEventListener)
     this.addEventListener(`${this.namespace}set-identifier`, this.setIdentifierEventListener)
-    this.addEventListener(`${this.namespace}request-more-peers`, this.requestMorePeersEventListener)
+    this.addEventListener(`${this.namespace}get-peers`, this.getPeersEventListener)
   }
 
   /**
@@ -254,7 +252,6 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * @return {void}
    */
   disconnectedCallback () {
-    this.p2pt.then(p2pt => p2pt.destroy())
     // global events
     self.removeEventListener('focus', this.focusEventListener)
     self.removeEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
@@ -262,7 +259,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.removeEventListener(`${this.namespace}send`, this.sendEventListener)
     this.removeEventListener(`${this.namespace}get-identifier`, this.getIdentifierEventListener)
     this.removeEventListener(`${this.namespace}set-identifier`, this.setIdentifierEventListener)
-    this.removeEventListener(`${this.namespace}request-more-peers`, this.requestMorePeersEventListener)
+    this.removeEventListener(`${this.namespace}get-peers`, this.getPeersEventListener)
   }
 
   /**
@@ -319,7 +316,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       /** @type {PeerconnectEventDetail} */
       detail: {
         peer,
-        peers: EventDrivenP2pt.filterPeers(this._peers),
+        peers: this.peers,
         _peerId: this.p2pt.then(p2pt => p2pt._peerId)
       },
       bubbles: true,
@@ -340,7 +337,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       /** @type {PeercloseEventDetail} */
       detail: {
         peer,
-        peers: EventDrivenP2pt.filterPeers(this._peers),
+        peers: this.peers,
         _peerId: this.p2pt.then(p2pt => p2pt._peerId)
       },
       bubbles: true,
@@ -422,10 +419,11 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   /**
    * Request More Peers
    *
+   * @param {boolean} [requestMorePeers = false]
    * @return {Promise<*[]>}
    */
-  async requestMorePeers () {
-    const trackers = await (await this.p2pt).requestMorePeers()
+  async getPeers (requestMorePeers = false) {
+    const trackers = requestMorePeers ? await (await this.p2pt).requestMorePeers() : (await this.p2pt).peers
     const peers = this._peers
     for (const key in trackers) {
       if (Object.hasOwnProperty.call(trackers, key)) {
@@ -513,6 +511,6 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * @return {Promise<*[]>}
    */
   get peers () {
-    return this.requestMorePeers()
+    return this.getPeers()
   }
 }
