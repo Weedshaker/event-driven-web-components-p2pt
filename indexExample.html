@@ -21,6 +21,7 @@
 
         // Find public WebTorrent tracker URLs here : https://github.com/ngosang/trackerslist/blob/master/trackers_all_ws.txt
         var trackersAnnounceURLs = [
+        "wss://tracker.files.fm:7073/announce",
         "wss://tracker.openwebtorrent.com",
         "wss://tracker.sloppyta.co:443/announce",
         "wss://tracker.novage.com.ua:443/announce",
@@ -61,5 +62,19 @@
         log('P2PT started. My peer id : ' + p2pt._peerId)
         p2pt.start()
     </script>
+    <input value="p2pt.requestMorePeers()
+    var peers = []
+    for (const key in p2pt.peers) {
+          if (Object.hasOwnProperty.call(p2pt.peers, key)) {
+            const tracker = p2pt.peers[key]
+            for (const key in tracker) {
+              if (Object.hasOwnProperty.call(p2pt.peers, key)) {
+                peers.push(tracker[key])
+                if (!this._lastPeers.includes(p2pt.peers[key])) newPeers.push(p2pt.peers[key])
+              }
+            }
+          }
+        }
+    peers.forEach(peer => p2pt.send(peer, "mond"))"></input>
 </body>
 </html>
