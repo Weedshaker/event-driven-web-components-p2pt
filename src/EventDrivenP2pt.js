@@ -1,5 +1,7 @@
 // @ts-check
 
+/* global location */
+
 import './weedshaker-p2pt/dist/p2pt.umd.js'
 
 // https://github.com/subins2000/p2pt/blob/master/api-docs.md#new-p2ptannounceurls---identifierstring--
@@ -141,6 +143,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   static get observedAttributes () {
     return ['identifier-string']
   }
+
   /**
    * Creates an instance of EventDrivenP2pt. The constructor will be called for every custom element using this class when initially created.
    *
@@ -179,7 +182,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       this.getPeers(true)
     }
     // it's not good to stop the interval on blur, gets out of sync
-    //this.blurEventListener = event => this.stop()
+    // this.blurEventListener = event => this.stop()
     this.beforeunloadEventListener = event => this.destroy()
     // custom events
     this.sendEventListener = /** @param {any & {detail: SendEventDetail}} event */ async event => {
@@ -238,7 +241,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.randomTimeoutId = null
     /**
      * Divider of Date.now(), which is in ms, makes this identifierStringIntervalDelay in 50 seconds
-     * 
+     *
      * @type {number}
      */
     this.identifierStringIntervalDelay = (50 * 1000)
@@ -268,7 +271,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     (await this.p2pt).start()
     // to find more peers, we use a sub name of the identifier string with a fix interval based on epoch time to keep searching/announcing in new rooms
     this.stop()
-    const getEpochFlooredToSeconds = () => Math.floor(Date.now()/this.identifierStringIntervalDelay)
+    const getEpochFlooredToSeconds = () => Math.floor(Date.now() / this.identifierStringIntervalDelay)
     const startEpochFlooredToSeconds = getEpochFlooredToSeconds() + 1
     // start at first jump before interval
     this.setAttribute('identifier-string', `${this.cleanIdentifierString(this.getIdentifier())}${this.epochSecondsSeparator}${getEpochFlooredToSeconds()}`)
@@ -283,8 +286,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         }, Math.floor(Math.random() * (this.identifierStringIntervalDelay / 2)))
       }
       intervalFunc()
-      this.identifierStringIntervalId = setInterval(intervalFunc, this.identifierStringIntervalDelay);
-    }, (startEpochFlooredToSeconds * this.identifierStringIntervalDelay) - Date.now());
+      this.identifierStringIntervalId = setInterval(intervalFunc, this.identifierStringIntervalDelay)
+    }, (startEpochFlooredToSeconds * this.identifierStringIntervalDelay) - Date.now())
   }
 
   stop () {
@@ -308,7 +311,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     this.start()
     // global events
     self.addEventListener('focus', this.focusEventListener)
-    //self.addEventListener('blur', this.blurEventListener)
+    // self.addEventListener('blur', this.blurEventListener)
     self.addEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
     // custom events
     this.addEventListener(`${this.namespace}send`, this.sendEventListener)
@@ -326,7 +329,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   disconnectedCallback () {
     // global events
     self.removeEventListener('focus', this.focusEventListener)
-    //self.removeEventListener('blur', this.blurEventListener)
+    // self.removeEventListener('blur', this.blurEventListener)
     self.removeEventListener('beforeunload', this.beforeunloadEventListener, { once: true })
     // custom events
     this.removeEventListener(`${this.namespace}send`, this.sendEventListener)
@@ -336,7 +339,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
   }
 
   attributeChangedCallback (name, oldValue, newValue) {
-    if (name === 'identifier-string' && this.getIdentifier() !== newValue) this.setIdentifierEventListener({detail: {identifierString: newValue, setAttribute: false}})
+    if (name === 'identifier-string' && this.getIdentifier() !== newValue) this.setIdentifierEventListener({ detail: { identifierString: newValue, setAttribute: false } })
   }
 
   /**

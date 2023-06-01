@@ -15,7 +15,8 @@
   },
   "standard": {
     "ignore": [
-      "/src/p2pt/"
+      "/src/p2pt/",
+      "/src/weedshaker-p2pt/"
     ]
   }
 }
