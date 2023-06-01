@@ -543,7 +543,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
       /** @type {PeersEventDetail} */
       detail: {
         peers: Promise.resolve(peers),
-        noDuplicatedPeers: EventDrivenP2pt.filterPeers(Promise.resolve(peers)),
+        noDuplicatedPeers: Promise.resolve(peers = await EventDrivenP2pt.filterPeers(Promise.resolve(peers))),
         newPeers: Promise.resolve(newPeers),
         noDuplicatedNewPeers: EventDrivenP2pt.filterPeers(Promise.resolve(newPeers)),
       },
