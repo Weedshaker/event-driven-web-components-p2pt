@@ -158,12 +158,16 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     /** @type {string} */
     this.namespace = this.getAttribute('namespace') || 'p2pt-'
 
+    /** @type {URL} */
+    // @ts-ignore
+    const src = new URL(location.href)
+
     if (typeof options.announceUrls === 'string') this.setAttribute('announce-urls', options.announceUrls)
     /** @type {Promise<string[]>} */
-    this.announceUrls = this.getAttribute('announce-urls') || 'https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt,wss://tracker.openwebtorrent.com,wss://tracker.sloppyta.co:443/,wss://tracker.novage.com.ua:443/,wss://tracker.btorrent.xyz:443/'
+    this.announceUrls = !this.hasAttribute('no-announce-urls-search-params') && src.searchParams.get(`${this.namespace}announce-urls`) || this.getAttribute('announce-urls') || 'https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt,wss://tracker.openwebtorrent.com,wss://tracker.sloppyta.co:443/,wss://tracker.novage.com.ua:443/,wss://tracker.btorrent.xyz:443/'
 
     if (typeof options.identifierString === 'string') this.setAttribute('identifier-string', options.identifierString)
-    this.setAttribute('identifier-string', this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components')
+    this.setAttribute('identifier-string', (this.identifierString = !this.hasAttribute('no-identifier-string-search-params') && src.searchParams.get(`${this.namespace}identifier-string`) || this.getAttribute('identifier-string') || 'weedshakers-event-driven-web-components'))
 
     /** @type {any[]} */
     this._peers = []
@@ -231,7 +235,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
     }
 
     /** @type {Promise<import("./p2pt/p2pt").p2pt|any>} */
-    this.p2pt = this.init(this.announceUrls, this.identifierString)
+    this.p2pt = this.init(this.announceUrls, this.getIdentifier())
 
     /** @type {number|null|*} */
     this.identifierStringIntervalId = null
