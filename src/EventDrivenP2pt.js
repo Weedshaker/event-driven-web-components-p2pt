@@ -252,7 +252,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
      *
      * @type {number}
      */
-    this.identifierStringIntervalDelay = (50 * 1000)
+    this.identifierStringIntervalDelay = (40 * 1000)
     /** @type {string} */
     this.epochSecondsSeparator = '--epoch_seconds--'
   }
@@ -563,7 +563,8 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    */
   static async filterPeers (peers) {
     const ids = []
-    return (await peers).reverse().filter(peer => {
+    // reverse(). made it worse, don't know the reason, maybe no push on peers array but unshift?
+    return (await peers).filter(peer => {
       const isDouble = ids.includes(peer.id)
       ids.push(peer.id)
       return !isDouble
