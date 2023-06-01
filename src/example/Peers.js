@@ -14,11 +14,14 @@ export default class Peers extends HTMLElement {
         `
     this.appendChild(details)
     this.peerconnectEventListener = async event => {
-      const peers = event.detail.result ? event.detail.result : await event.detail.peers
+      const peers = await event.detail.noDuplicatedPeers
       details.querySelector('summary').textContent = peers.length
       if (event.detail._peerId) event.detail._peerId.then(peerId => (details.querySelector('div > span').textContent = peerId))
       details.querySelector('div > ul').innerHTML = peers.reduce((acc, peer) => `${acc}<li>${peer.id}</li>`, '')
-      if (event.detail.newPeers) details.querySelector('div > ul#new-peers').innerHTML = event.detail.newPeers.reduce((acc, peer) => `${acc}<li>${peer.id}</li>`, '')
+      if (event.detail.newPeers) {
+        const newPeers = await event.detail.newPeers
+        if (newPeers.length) details.querySelector('div > ul#new-peers').innerHTML = newPeers.reduce((acc, peer) => `${acc}<li>${peer.id}</li>`, '')
+      }
     }
   }
 

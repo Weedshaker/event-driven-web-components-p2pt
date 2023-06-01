@@ -68,8 +68,10 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
 /**
  * outgoing event
  @typedef {{
-  result: *[],
-  newPeers: *[]
+  peers: Promise<*[]>,
+  noDuplicatedPeers: Promise<*[]>,
+  newPeers: Promise<*[]>,
+  noDuplicatedNewPeers: Promise<*[]>,
 }} PeersEventDetail
 */
 
@@ -102,6 +104,7 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
  @typedef {{
   peer: *,
   peers: Promise<*[]>,
+  noDuplicatedPeers: Promise<*[]>,
   _peerId: Promise<string>
 }} PeerconnectEventDetail
 */
@@ -111,6 +114,7 @@ import './weedshaker-p2pt/dist/p2pt.umd.js'
  @typedef {{
   peer: *,
   peers: Promise<*[]>,
+  noDuplicatedPeers: Promise<*[]>,
   _peerId: Promise<string>
 }} PeercloseEventDetail
 */
@@ -396,11 +400,13 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    */
   onPeerconnect (peer) {
     this._peers.push(peer)
+    const peers = this.peers
     this.dispatchEvent(new CustomEvent(`${this.namespace}peerconnect`, {
       /** @type {PeerconnectEventDetail} */
       detail: {
         peer,
-        peers: this.peers,
+        peers: peers,
+        noDuplicatedPeers: EventDrivenP2pt.filterPeers(peers),
         _peerId: this.p2pt.then(p2pt => p2pt._peerId)
       },
       bubbles: true,
@@ -417,11 +423,13 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    */
   onPeerclose (peer) {
     this._peers.splice(this._peers.indexOf(peer), 1)
+    const peers = this.peers
     this.dispatchEvent(new CustomEvent(`${this.namespace}peerclose`, {
       /** @type {PeercloseEventDetail} */
       detail: {
         peer,
-        peers: this.peers,
+        peers: peers,
+        noDuplicatedPeers: EventDrivenP2pt.filterPeers(peers),
         _peerId: this.p2pt.then(p2pt => p2pt._peerId)
       },
       bubbles: true,
@@ -531,13 +539,13 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
         }
       }
     }
-    peers = EventDrivenP2pt.filterPeers(peers)
-    newPeers = EventDrivenP2pt.filterPeers(newPeers)
     this.dispatchEvent(new CustomEvent(`${this.namespace}peers`, {
       /** @type {PeersEventDetail} */
       detail: {
-        result: peers,
-        newPeers
+        peers: Promise.resolve(peers),
+        noDuplicatedPeers: EventDrivenP2pt.filterPeers(Promise.resolve(peers)),
+        newPeers: Promise.resolve(newPeers),
+        noDuplicatedNewPeers: EventDrivenP2pt.filterPeers(Promise.resolve(newPeers)),
       },
       bubbles: true,
       cancelable: true,
@@ -550,12 +558,12 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    * Filter all duplicated peers
    *
    * @static
-   * @param {*[]} peers
-   * @return {*[]}
+   * @param {Promise<*[]>} peers
+   * @return {Promise<*[]>}
    */
-  static filterPeers (peers) {
+  static async filterPeers (peers) {
     const ids = []
-    return peers.filter(peer => {
+    return (await peers).filter(peer => {
       const isDouble = ids.includes(peer.id)
       ids.push(peer.id)
       return !isDouble
