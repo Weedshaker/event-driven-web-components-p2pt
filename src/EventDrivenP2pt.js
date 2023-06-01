@@ -563,7 +563,7 @@ export const EventDrivenP2pt = (ChosenHTMLElement = HTMLElement) => class EventD
    */
   static async filterPeers (peers) {
     const ids = []
-    return (await peers).filter(peer => {
+    return (await peers).reverse().filter(peer => {
       const isDouble = ids.includes(peer.id)
       ids.push(peer.id)
       return !isDouble
